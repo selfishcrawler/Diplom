@@ -10,43 +10,42 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Вход в личный кабинет</PageTitle>
 
-<h1>Log in</h1>
+<h1>Вход в личный кабинет</h1>
 <div class="row">
     <div class="col-md-4">
         <section>
             <StatusMessage Message="@errorMessage" />
             <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                 <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
                 <hr />
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+                    <InputText @bind-Value="Input.Phone" class="form-control" autocomplete="tel" aria-required="true" placeholder="+71234567890" />
+                    <label for="phone" class="form-label">Номер телефона</label>
+                    <ValidationMessage For="() => Input.Phone" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
                     <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
+                    <label for="password" class="form-label">Пароль</label>
                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
                 <div class="checkbox mb-3">
                     <label class="form-label">
                         <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
+                        Запомнить меня
                     </label>
                 </div>
                 <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Войти</button>
                 </div>
                 <div>
                     <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
+                        <a href="Account/ForgotPassword">Забыли пароль?</a>
                     </p>
                     <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Зарегистрировать нового пользователя</a>
                     </p>
                 </div>
             </EditForm>
@@ -79,17 +78,11 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(Input.Phone, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl);
-        }
-        else if (result.RequiresTwoFactor)
-        {
-            RedirectManager.RedirectTo(
-                "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
         }
         else if (result.IsLockedOut)
         {
@@ -98,21 +91,25 @@
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Ошибка: неуспешная попытка входа.";
         }
     }
 
     private sealed class InputModel
     {
         [Required(ErrorMessage = "{0} не может быть пустым")]
-        [EmailAddress]
-        public string Email { get; set; } = "";
+        [DataType(DataType.PhoneNumber)]
+        [RegularExpression("^\\+7\\d{10}$", ErrorMessage = "{0} имеет неверный формат")]
+        [Display(Name = "Номер телефона")]
+        public string Phone { get; set; } = "";
 
         [Required(ErrorMessage = "{0} не может быть пустым")]
+        [StringLength(32, ErrorMessage = "{0} должен содержать от {2} до {1} символов.", MinimumLength = 8)]
         [DataType(DataType.Password)]
+        [Display(Name = "Пароль")]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
+        [Display(Name = "Запомнить меня?")]
         public bool RememberMe { get; set; }
     }
 }
